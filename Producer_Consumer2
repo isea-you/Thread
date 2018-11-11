@@ -1,0 +1,75 @@
+package hello_java;
+
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class Producer_Consumer {
+    public static void main(String[] args) {
+        ShareData shareData = new ShareData();
+
+        new Thread(() ->{
+            for (int i = 0; i < 10; i++) {
+                shareData.consume();
+            }
+        },"消费者1").start();
+
+        new Thread(() ->{
+            for (int i = 0; i < 10; i++) {
+                shareData.consume();
+            }
+        },"消费者2").start();
+
+        new Thread(() ->{
+            for (int i = 0; i < 10; i++) {
+                shareData.produce();
+            }
+        },"生产者1").start();
+
+        new Thread(() ->{
+            for (int i = 0; i < 10; i++) {
+                shareData.produce();
+            }
+        },"生产者2").start();
+    }
+
+}
+
+class ShareData{
+    private int count = 0;
+    private Lock lock = new ReentrantLock();
+    private Condition condition = lock.newCondition();
+
+    public void consume(){
+        lock.lock();
+        try {
+            while(count != 1){
+                condition.await();
+            }
+            count --;
+            System.out.println(Thread.currentThread().getName() + "\t" + count);
+            condition.signalAll();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void produce(){
+        lock.lock();
+        try {
+            while(count != 0){
+                condition.await();
+            }
+            count ++;
+            System.out.println(Thread.currentThread().getName() + "\t" + count);
+            condition.signalAll();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+}
